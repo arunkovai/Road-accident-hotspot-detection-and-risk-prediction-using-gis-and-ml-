@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcciTrack Dashboard | Coimbatore</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo"><i class="fa-solid fa-car-burst"></i> AcciTrack</h1>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#map-section">Accident Map</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#prediction-section">Risk Prediction</a></li>
+                <li><a href="#about-section">About</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Homepage Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="hero-content">
+            <h1 class="gradient-text">Road Accident Hotspot Detection and Risk Prediction</h1>
+            <h2 class="sub-heading">A Case Study of Coimbatore City</h2>
+            <p>Our system leverages GIS visualization and Machine Learning to detect accident-prone areas and predict
+                accident risks, helping authorities improve road safety.</p>
+            <div class="hero-buttons">
+                <a href="#dashboard" class="btn btn-primary">View Dashboard</a>
+                <a href="#map-section" class="btn btn-secondary">Explore Map</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="glass-card summary-card">
+                <i class="fa-solid fa-chart-line card-icon text-blue"></i>
+                <div class="card-details">
+                    <h3>Total Accidents</h3>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.2rem;">
+                        <p id="total-accidents-count" style="margin:0; font-size:1.5rem; font-weight:700;">4,702</p>
+                        <select id="yearFilter"
+                            style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:2px 5px; outline:none; font-family:var(--font-main); cursor:pointer;">
+                            <option value="all">All Years</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card summary-card">
+                <i class="fa-solid fa-triangle-exclamation card-icon text-red"></i>
+                <div class="card-details">
+                    <h3>Top Issue</h3>
+                    <p id="top-issue-name" style="margin-bottom: 0.3rem;">Loading...</p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">Overspeeding is identified as the leading cause of accidents due to high vehicle speed and lack of control.</p>
+                </div>
+            </div>
+            <div class="glass-card summary-card">
+                <i class="fa-solid fa-location-dot card-icon text-green"></i>
+                <div class="card-details">
+                    <h3>Top Location</h3>
+                    <p id="top-location-name" style="margin-bottom: 0.3rem;">Loading...</p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">Avinashi Road is identified as the most accident-prone zone due to heavy traffic and frequent congestion.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GIS Map Section -->
+    <section id="map-section" class="map-section bg-light">
+        <div class="section-header" style="max-width: 800px; margin: 0 auto; padding-bottom: 0.5rem;">
+            <h2><i class="fa-solid fa-map-location-dot"></i> Interactive Accident Map</h2>
+        </div>
+        <div class="container">
+            <div class="map-controls glass-card" style="margin-bottom: 1rem;">
+                <div class="filter-group">
+                    <label for="locationFilter"><i class="fa-solid fa-filter"></i> Filter by Location:</label>
+                    <select id="locationFilter">
+                        <option value="all">All Locations (Coimbatore)</option>
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+                <div class="map-legend">
+                    <span class="legend-item"><span class="dot fatal"></span> Fatal Accidents</span>
+                    <span class="legend-item"><span class="dot non-fatal"></span> Non-fatal Accidents</span>
+                    <span class="legend-item"><span class="dot mixed"></span> Mixed or Other</span>
+                </div>
+            </div>
+            
+            <p style="text-align: left; line-height: 1.6; color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 800px;">The map shows accident locations using latitude and longitude. Users can interact with markers to view details.</p>
+            
+            <div class="map-container">
+                <div id="accidentMap"></div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Heatmap Section -->
+    <section id="heatmap-section" class="map-section" style="background-color: var(--bg-dark); padding-top: 2rem;">
+        <div class="section-header" style="max-width: 800px; margin: 0 auto; padding-bottom: 1.5rem;">
+            <h2><i class="fa-solid fa-fire text-red" style="color: #EF4444;"></i> Accident Density Map</h2>
+            <p style="text-align: left; line-height: 1.6; color: var(--text-secondary);">The heatmap represents accident concentration flowing dynamically across the city's road network. Distinct color variations indicate low to high density zones, immediately guiding the eye to the most perilous stretches of pavement. This visualization assists traffic engineers in prioritizing layout improvements strictly.</p>
+        </div>
+        <div class="container">
+            <div class="map-container glass-card" style="padding: 10px;">
+                <div id="heatMap" style="height: 500px; width: 100%; border-radius: 8px;"></div>
+            </div>
+        </div>
+    </section>
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="dashboard-section">
+        <div class="section-header">
+            <h2><i class="fa-solid fa-chart-pie"></i> Data Analytics Dashboard</h2>
+            <p>Visualizing accident severity, causes, and trends across Coimbatore.</p>
+        </div>
+
+        <div class="charts-grid container">
+            <!-- First: Line Chart -->
+            <div class="chart-card span-2">
+                <h3>Accident Trends by Year</h3>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5; text-align: left;">The chart shows yearly accident trends recorded faithfully over the recent historical timeline. This long-term visualization helps understand the overall systemic increase or decrease in road incidents across the city sectors. It is ultimately heavily used for future prediction targeting.</p>
+                <div class="chart-container line-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Second: Pie Charts -->
+            <div class="chart-card">
+                <h3>Accident Severity Distribution</h3>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5; text-align: left;">The chart shows the distribution of accident types classified heavily by their severity level. It clearly separates occurrences into fatal, non-fatal, and minor groupings safely. This breakdown effectively helps identify major contributing factors concerning total systemic vehicular safety.</p>
+                <div class="chart-container">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Accident Causes</h3>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5; text-align: left;">The chart shows the distribution of accident causes sourced directly from local police reporting logs uniformly. It outlines behavioral and infrastructural gaps such as reckless speeding. Reviewing this effectively helps identify major contributing factors needing fast tactical mitigation.</p>
+                <div class="chart-container">
+                    <canvas id="causesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Third: Line Chart (Monthly) -->
+            <div class="chart-card span-2">
+                <h3>Accident Trends by Month</h3>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5; text-align: left;">The chart shows the variation of accidents reliably across different months spanning the year. Monitoring these fluid seasonal monthly patterns helps explicitly track when crashes surge aggressively. It broadly helps identify peak accident months demanding greater police mobilization.</p>
+                <div class="chart-container line-container">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Fourth: Bar Chart (Top Locations) -->
+            <div class="chart-card span-2">
+                <h3>Top Accident Locations</h3>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5; text-align: left;">The chart powerfully highlights distinct city locations intersecting with the strictly highest accident rates. Consistently ranking these specific grids quickly isolates the core root of overall roadway dangers reliably. The resulting data comprehensively helps identify heavily accident-prone zones needing intervention.</p>
+                <div class="chart-container">
+                    <canvas id="locationsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Key Insights Section -->
+            <div class="glass-card span-2 insights-module" style="margin-top:0.5rem; margin-bottom:1.5rem; padding:1.8rem; border-left: 5px solid #3B82F6; background:rgba(255, 255, 255, 0.03);">
+                <h3 style="color:var(--text-primary); margin-bottom:1.2rem; font-size:1.4rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.8rem;">
+                    <i class="fa-solid fa-chart-line text-yellow"></i> Key Findings & Insights
+                </h3>
+                <ul style="list-style-type:none; padding-left:0; color:var(--text-secondary); font-size:1.05rem; line-height:1.8; margin:0;">
+                    <li style="margin-bottom:0.8rem;"><i class="fa-solid fa-check text-green" style="margin-right:10px;"></i> <strong>Avinashi Road</strong> is currently the most heavily accident-prone area monitored.</li>
+                    <li style="margin-bottom:0.8rem;"><i class="fa-solid fa-check text-green" style="margin-right:10px;"></i> <strong>Overspeeding</strong> and <strong>Signal Violations</strong> remain the most frequent catalyst for critical accidents.</li>
+                    <li style="margin-bottom:0.8rem;"><i class="fa-solid fa-check text-green" style="margin-right:10px;"></i> <strong>Non-fatal accidents</strong> and minor scrapes occur substantially more often than fatal crashes.</li>
+                    <li style="margin-bottom:0.8rem;"><i class="fa-solid fa-check text-green" style="margin-right:10px;"></i> Fatalities and severe risk exponentially increase during <strong>Night Time</strong> combined with <strong>Poor Lighting/Road Conditions</strong>.</li>
+                    <li style="margin-bottom:0;"><i class="fa-solid fa-check text-green" style="margin-right:10px;"></i> Predictions using predictive ML indicate strict traffic calming measures must be deployed by <strong>2026</strong> to plateau the rising trend.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Prediction Section -->
+    <section id="prediction-section" class="prediction-section">
+        <div class="section-header">
+            <h2><i class="fa-solid fa-brain"></i> Risk Prediction Model</h2>
+            <p>Predict the accident risk level based on specific input parameters.</p>
+        </div>
+
+        <div class="container prediction-container">
+            <div class="prediction-form-card glass-card">
+                <h3>Enter Parameters</h3>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="predLocation">Location</label>
+                        <select id="predLocation" required>
+                            <option value="" disabled selected>Select a location</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="predTime">Time of Day (Day / Night)</label>
+                        <select id="predTime" required>
+                            <option value="" disabled selected>Select time</option>
+                            <option value="Day Time">Day Time</option>
+                            <option value="Night Time">Night Time</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="predCondition">Road Condition</label>
+                        <select id="predCondition" required>
+                            <option value="" disabled selected>Select condition</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="predDensity">Traffic Density</label>
+                        <select id="predDensity" required>
+                            <option value="" disabled selected>Select traffic density</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="predIssue">Reported Issue</label>
+                        <select id="predIssue" required>
+                            <option value="" disabled selected>Select issue</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Predict Risk Level</button>
+                </form>
+            </div>
+
+            <div class="prediction-result-card glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;">
+                    <h3 style="margin: 0; padding: 0; border: none;">Prediction Result</h3>
+                    <div style="position: relative; display: inline-block;" class="download-container">
+                        <button class="btn" onclick="downloadCombinedPDFReport(event)" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border: 1px solid #60a5fa; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); font-weight: 500;" onmouseover="this.style.boxShadow='0 0 25px rgba(59, 130, 246, 0.9)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='0 0 15px rgba(59, 130, 246, 0.6)'; this.style.transform='none';">
+                            <i class="fa-solid fa-file-pdf"></i> Download Report
+                        </button>
+                    </div>
+                </div>
+                <div class="result-display" id="resultDisplay">
+                    <div class="placeholder-icon">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        <p>Submit form to see risk prediction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" style="margin-top: 2rem;">
+            <!-- Suggestion Feature (Moved from Dashboard) -->
+            <div class="glass-card suggestion-module"
+                style="padding:1.5rem; background:rgba(255, 255, 255, 0.05); box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+                <h3
+                    style="color:var(--brand-accent); margin-bottom:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-lightbulb" style="font-size:1.2rem;"></i> Accident Location Safety Suggestions
+                </h3>
+                <div class="suggestion-container" style="display:flex; flex-direction:column; gap:1.2rem;">
+                    <div class="form-group" style="max-width: 100%; margin-bottom:0;">
+                        <label for="suggestionLocation"
+                            style="font-weight:500; color:var(--text-secondary); margin-bottom:0.4rem; display:block;">Select
+                            an Accident Location to view specific safety measures:</label>
+                        <select id="suggestionLocation"
+                            style="background:rgba(0,0,0,0.4); color:white; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:10px 14px; width:100%; outline:none; font-family:var(--font-main); cursor:pointer; font-size:1rem; transition:border-color 0.3s;">
+                            <option value="" disabled selected>-- Select a location --</option>
+                            <!-- Dynamically generated -->
+                        </select>
+                    </div>
+                    <div id="suggestionBox"
+                        style="display:none; background:linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05)); border:1px solid rgba(16, 185, 129, 0.4); border-radius:10px; padding:1.5rem; box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.05);">
+                        <h4
+                            style="color:var(--text-primary); margin-bottom:0.6rem; display:flex; align-items:center; gap:0.5rem; font-size:1.1rem;">
+                            <i class="fa-solid fa-shield-halved text-green"></i> Recommended Safety Action
+                        </h4>
+                        <p id="suggestionText"
+                            style="color:var(--text-secondary); line-height:1.6; font-size:1.05rem; margin:0; padding-left:1.8rem; border-left:3px solid var(--status-safe);">
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about-section" class="about-section bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2><i class="fa-solid fa-circle-info"></i> About Project</h2>
+                <p>Final Year Data Science Project</p>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card glass-card">
+                    <h3>Purpose of Project</h3>
+                    <p>This project aims to analyze historical accident data in Coimbatore city to identify high-risk
+                        zones (hotspots) and provide a predictive model that estimates the risk level based on
+                        environmental and situational factors.</p>
+                </div>
+                <div class="about-card glass-card">
+                    <h3>Importance</h3>
+                    <p>Detecting accident hotspots allows traffic authorities and urban planners to deploy targeted
+                        interventions such as improved lighting, speed breakers, and better signage to significantly
+                        reduce mortality and morbidity on the roads.</p>
+                </div>
+                <div class="about-card glass-card">
+                    <h3>GIS & Machine Learning</h3>
+                    <p>Integrating Geographic Information Systems (GIS) with Data Science provides spatial context to
+                        accident data. Combined with Machine Learning, authorities can shift from reactive measures to
+                        proactive risk mitigation.</p>
+                </div>
+                
+                <!-- Machine Learning Model Used (Resized into Grid) -->
+                <div class="about-card glass-card">
+                    <h3>Machine Learning Model Used</h3>
+                    <div style="font-size: 0.95rem; line-height: 1.6;">
+                        <p style="margin-bottom: 0.4rem;"><strong>Model:</strong> Decision Tree</p>
+                        <p style="margin-bottom: 0.6rem;"><strong>Purpose:</strong> To predict accident risk level</p>
+                        <p style="margin-bottom: 0.2rem;"><strong>Input Parameters:</strong></p>
+                        <ul style="padding-left: 1.5rem; margin-bottom: 0.8rem; list-style-type: circle;">
+                            <li>Location</li>
+                            <li>Time of Day</li>
+                            <li>Road Condition</li>
+                            <li>Traffic Density</li>
+                            <li>Reported Issue</li>
+                        </ul>
+                        <p style="margin-top: 0;"><strong>Output:</strong> Risk Level (Low / Medium / High)</p>
+                    </div>
+                </div>
+
+                <!-- System Features Box -->
+                <div class="about-card glass-card">
+                    <h3>System Features</h3>
+                    <ul style="padding-left: 1.5rem; margin-bottom: 0.8rem; list-style-type: circle; font-size: 0.95rem; line-height: 1.6;">
+                        <li>Interactive accident map visualization</li>
+                        <li>Hotspot detection using clustering</li>
+                        <li>Accident trend analysis</li>
+                        <li>Risk prediction using machine learning</li>
+                        <li>Heatmap visualization</li>
+                        <li>Safety recommendation system</li>
+                    </ul>
+                </div>
+
+                <!-- Project Workflow Box -->
+                <div class="about-card glass-card">
+                    <h3>Project Workflow</h3>
+                    <ul style="padding-left: 1.5rem; margin-bottom: 0.8rem; list-style-type: circle; font-size: 0.95rem; line-height: 1.6;">
+                        <li>Data collection</li>
+                        <li>Data preprocessing</li>
+                        <li>Visualization using charts and maps</li>
+                        <li>Hotspot detection</li>
+                        <li>Risk prediction using Decision Tree model</li>
+                        <li>Insight generation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack glass-card">
+                <h3>Technologies Used</h3>
+                <div class="tech-tags"
+                    style="display:flex; flex-wrap:wrap; justify-content:center; gap:0.8rem; margin-top:1.2rem;">
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-brands fa-python" style="margin-right:5px;"></i>Python</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-brands fa-js" style="margin-right:5px;"></i>JavaScript</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-solid fa-brain" style="margin-right:5px;"></i>Machine Learning</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-solid fa-map" style="margin-right:5px;"></i>QGIS</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-brands fa-html5" style="margin-right:5px;"></i>HTML</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-brands fa-css3-alt" style="margin-right:5px;"></i>CSS</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-solid fa-chart-line" style="margin-right:5px;"></i>Chart.js</span>
+                    <span class="tag"
+                        style="background:rgba(255,255,255,0.1); padding:6px 14px; border-radius:20px; font-weight:500; font-size:0.95rem;"><i
+                            class="fa-solid fa-leaf" style="margin-right:5px;"></i>Leaflet.js</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- jsPDF & autoTable JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
