@@ -1,0 +1,24 @@
+# Logs
+server_log.txt
+server_out.txt
+*.log
+
+# Backups and archives
+*.zip
+*.rar
+
+# Data files outside of static/data (raw dataset files)
+"Coimbatore_Road_Accident DATA 170 (1).csv"
+"Coimbatore_Road_Accident DATA 170 (1).xlsx"
+
+# Nested or duplicate project folders (if any)
+"Main project"
+
+# Python environment and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+env/
+venv/
